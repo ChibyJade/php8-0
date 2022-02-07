@@ -1,0 +1,25 @@
+stages:
+  - build
+default:
+  cache:
+    paths:
+    - ./
+
+build-docker:
+  stage: "build"
+  only:
+    - main
+  image: docker:20.10.12-alpine3.15
+  services:
+    - docker:20.10.12-dind-alpine3.15
+  variables:
+    IMAGE_NAME: chibyjade/php-8.0
+    IMAGE_TAG: ${CI_PIPELINE_ID}
+    APP_VERSION: ${IMAGE_TAG}
+    GIT_COMMIT: ${CI_COMMIT_SHA}
+  script:
+    - echo ${DOCKER_PWD} | docker login -u ${DOCKER_LOGIN} --password-stdin
+    - docker info
+    - docker build -t ${IMAGE_NAME}:${IMAGE_TAG} --build-arg APP_VERSION=${APP_VERSION} --build-arg GIT_COMMIT=${GIT_COMMIT} .
+    - chmod +x ./docker-tag.sh && ./docker-tag.sh
+    - docker push ${IMAGE_NAME}
